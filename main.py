@@ -1,9 +1,9 @@
-from flask import Flask, render_template, redirect, url_for, jsonify, request
+from flask import Flask, render_template, redirect, url_for, jsonify, request, make_response
 import psycopg2
 from script2 import mypassword, secret_key, secret_jwt_key
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, current_user
 
 app = Flask(__name__)
 uri = f'postgresql://postgres:{mypassword}@localhost/e-commerce'
@@ -35,7 +35,7 @@ def home():
     cur.close()
     conn.close()
 
-    return render_template('home.html', products = products)
+    return jsonify({'message':'information was illustrated correctly'})
 
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -44,15 +44,15 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password")
         if not username or not password:
-            return render_template("login.html")
+            return jsonify({'message':'something went wrong'})
 
         user = Users.query.filter_by(username=username).first()
         if not user or not check_password_hash(user.password, password):
-            return render_template("login.html")
+            return jsonify({'message': 'something went wrong'})
 
         access_token = create_access_token(identity=username)
-        return redirect(url_for('home'))
-    return render_template("login.html")
+        return jsonify({'message':'Login success', 'access_token':access_token})
+    return jsonify({'message':'something went wrong'})
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
@@ -62,7 +62,7 @@ def register():
         email = request.form.get("email")
 
         if not username or not password or not email:
-            return render_template("registration.html")
+            return jsonify({'message': 'something went wrong'})
 
         hashed_password = generate_password_hash(password)
         new_user = Users(username=username, email=email, password=hashed_password)
@@ -70,7 +70,7 @@ def register():
         db.session.commit()
 
         return redirect(url_for('login'))
-    return render_template("registration.html")
+    return jsonify({'message':'something went wrong'})
 
 
 # create db with images
