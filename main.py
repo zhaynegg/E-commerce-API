@@ -7,7 +7,6 @@ import jwt
 
 app = Flask(__name__)
 uri = f'postgresql://postgres:{mypassword}@localhost/e-commerce'
-print(uri)
 
 app.config['SECRET_KEY'] = secret_key
 app.config['SQLALCHEMY_DATABASE_URI'] = uri
@@ -20,6 +19,20 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(70), unique=True, nullable=False)
     password = db.Column(db.String(50), nullable=False)
+
+@app.route('/')
+def home():
+    conn = psycopg2.connect(host="localhost", dbname="e-commerce", user="postgres",
+                            password=mypassword, port=5432)
+    cur = conn.cursor()
+    cur.execute("""SELECT * FROM products""")
+    products = cur.fetchall()
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return render_template('home.html', products = products)
 
 # create db with images
 # create a platform to choose the products

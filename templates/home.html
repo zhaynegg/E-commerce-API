@@ -5,6 +5,16 @@
     <title>Title</title>
 </head>
 <body>
-
+    <h1>List of products</h1>
+    {% for row in products %}
+    <form action="">
+        <label for="name"></label>
+        <p id="name">{{row[1]}}</p>
+        <label for="count"></label>
+        <p id="count">{{row[2]}}</p>
+        <label for="cost"></label>
+        <p id="cost">{{row[3]}}</p>
+    </form>
+    {% endfor %}
 </body>
 </html>
