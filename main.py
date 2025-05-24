@@ -1,7 +1,25 @@
-from flask import Flask
+from flask import Flask, render_template, redirect, url_for, jsonify, request
 import psycopg2
-from script2 import mypassword
+from script2 import mypassword, secret_key
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
+
 app = Flask(__name__)
+uri = f'postgresql://postgres:{mypassword}@localhost/e-commerce'
+print(uri)
+
+app.config['SECRET_KEY'] = secret_key
+app.config['SQLALCHEMY_DATABASE_URI'] = uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    email = db.Column(db.String(70), unique=True, nullable=False)
+    password = db.Column(db.String(50), nullable=False)
 
 # create db with images
 # create a platform to choose the products
