@@ -30,6 +30,7 @@ def user_lookup_callback(_jwt_header, jwt_data):
     return Users.query.filter_by(username=identity).one_or_none()
 
 
+# All about shopping
 @app.route('/shopping', methods=['POST', 'GET'])
 @jwt_required()
 def home():
@@ -44,7 +45,58 @@ def home():
     conn.close()
     return jsonify({'message': 'information was illustrated correctly', 'products': products})
 
+@app.route('/shopping/<int:id>', methods=['POST', 'GET'])
+@jwt_required()
+def product_representation(id):
+    conn = psycopg2.connect(host="localhost", dbname="e-commerce", user="postgres",
+                            password=mypassword, port=5432)
+    cur = conn.cursor()
+    cur.execute("""SELECT * FROM products WHERE id = %s""" % (id, ))
+    products = cur.fetchall()
+    conn.commit()
+    cur.close()
+    conn.close()
 
+    if not products:
+        return {'msg':'The product does not exist'}
+
+    return jsonify(products)
+
+@app.route('/add_to_basket', methods= ['POST', 'GET'])
+@jwt_required()
+def add_to_basket():
+    data = request.get_json()
+    product_id = data.get("product_id")
+    count = data.get("count")
+    user_id = current_user.id
+
+    if not product_id:
+        return {'error': 'There is nothing to add'}
+
+    conn = psycopg2.connect(host="localhost", dbname="e-commerce", user="postgres",
+                            password=mypassword, port=5432)
+    cur = conn.cursor()
+    cur.execute(f"""INSERT INTO baskets(user_id, product_id, count)
+                VALUES ({user_id}, {product_id}, {count});""")
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {'msg': 'Everything went right'}
+
+@app.route('/my_basket', methods= ['GET', 'POST'])
+@jwt_required()
+def show_my_basket():
+    conn = psycopg2.connect(host="localhost", dbname="e-commerce", user="postgres",
+                            password=mypassword, port=5432)
+    cur = conn.cursor()
+    cur.execute("""SELECT * FROM baskets WHERE user_id = %s""" % (current_user.id,))
+    products = cur.fetchall()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify(products)
+
+# Login/Registration
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     if request.method == "POST":
