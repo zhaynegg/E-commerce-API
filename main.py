@@ -1,3 +1,4 @@
+import stripe
 from flask import Flask, render_template, redirect, url_for, jsonify, request, make_response
 import psycopg2
 from script2 import mypassword, secret_key, secret_jwt_key
@@ -12,10 +13,12 @@ app.config['SECRET_KEY'] = secret_key
 app.config["JWT_SECRET_KEY"] = secret_jwt_key
 app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['STRIPE_PUBLIC_KEY'] = 'pk_test_51RUTOWFyJ1FxFyl8Ntk6HEiJ1PGpRbwizdCNQFI8HAJI2enkaApO1qtefU9KDowKf6RQbUs1dluAU0MtQMbSZcaK00cPINmhdB'
+app.config['STRIPE_SECRET_KEY'] = 'sk_test_51RUTOWFyJ1FxFyl8TMNu4MjqQED9P7jvDngFjiRH9yFwLQTj4Kwu2rAPCXfmDpJr6xs4RrIjfGBnryMcMFiID2Of00bsOOZxd6'
 
+stripe.api_key = app.config['STRIPE_SECRET_KEY']
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -95,6 +98,25 @@ def show_my_basket():
     cur.close()
     conn.close()
     return jsonify(products)
+
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session(price_id):
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            line_items=[
+                {
+                    'price': price_id,
+                    'quantity': 1,
+                },
+            ],
+            mode='payment',
+            success_url=url_for('show_my_basket', _external=True),
+            cancel_url=url_for('show_my_basket', _external=True),
+        )
+    except Exception as e:
+        return str(e)
+
+    return redirect(checkout_session.url, code=303)
 
 # Login/Registration
 @app.route('/login', methods=['POST', 'GET'])
